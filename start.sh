@@ -7,13 +7,13 @@ function ontrap() {
 
 trap ontrap SIGINT
 
-pkill -f './rcon-bot-bhmm'
+pkill -f './TerminalWire'
 
 mkdir -p tmp/
 [ -f tmp/botlog ] && touch -f tmp/botlog
 
 while true; do
-	./rcon-bot-bhmm | tee -a tmp/botlog &> /dev/null
-	echo "Bot exited." | tee -a tmp/botlog
+	./TerminalWire &> /dev/null
+	echo "Bot exited." 
 	sleep 5
 done
