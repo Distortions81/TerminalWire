@@ -14,8 +14,8 @@ import (
 	"github.com/Distortions81/rcon"
 	"github.com/bwmarrin/discordgo"
 
+	"./cfg"
 	"./constants"
-	"./def"
 	"./disc"
 	"./glob"
 	"./logs"
@@ -30,6 +30,12 @@ func main() {
 	t := time.Now()
 
 	if !ReadConfig() {
+		logs.Log("No config found")
+		return
+	}
+
+	if !cfg.FindAndReadConfigs() {
+		logs.Log("No server configs found.")
 		return
 	}
 
@@ -182,7 +188,7 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 
 func ReadConfig() bool {
 
-	_, err := os.Stat(def.DATA_DIR + def.CONFIG_FILE)
+	_, err := os.Stat(constants.DATA_DIR + constants.CONFIG_FILE)
 	notfound := os.IsNotExist(err)
 
 	if notfound {
@@ -192,7 +198,7 @@ func ReadConfig() bool {
 
 	} else {
 
-		file, err := ioutil.ReadFile(def.DATA_DIR + def.CONFIG_FILE)
+		file, err := ioutil.ReadFile(constants.DATA_DIR + constants.CONFIG_FILE)
 
 		if file != nil && err == nil {
 			err := json.Unmarshal([]byte(file), &glob.ServerList)

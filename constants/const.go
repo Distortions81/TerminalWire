@@ -9,3 +9,12 @@ const Unknown = "Unknown"
 const CMSRate = 500 * time.Millisecond
 const CMSRestTime = 6000 * time.Millisecond
 const CMSPollRate = 100 * time.Millisecond
+
+//Replace with data from global config
+const ServersRoot = "/home/dist/Desktop/"
+const ServersPrefix = "cw-"
+
+const MaxServers = 32
+
+const DATA_DIR = ""
+const CONFIG_FILE = "servers.cfg"

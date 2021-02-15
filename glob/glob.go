@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"../def"
+	"../constants"
 	"github.com/bwmarrin/discordgo"
 )
 
@@ -25,7 +25,7 @@ type server struct {
 type servers struct {
 	Token     string
 	ChannelID string
-	Servers   [def.MaxServers]server `json:",omitempty"`
+	Servers   [constants.MaxServers]server `json:",omitempty"`
 }
 
 var ServerList servers
