@@ -14,4 +14,5 @@ func Log(text string) {
 
 	buf := fmt.Sprintf("%s %s", date, text)
 	glob.BotLogDesc.WriteString(buf + "\n")
+	fmt.Println(buf)
 }

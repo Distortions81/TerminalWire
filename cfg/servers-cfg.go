@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,8 @@ import (
 	"../constants"
 	"../logs"
 )
+
+var ServerCfgs []servdata
 
 func FindAndReadConfigs() bool {
 	var servFound []string
@@ -26,12 +29,12 @@ func FindAndReadConfigs() bool {
 		if f.IsDir() && strings.Contains(f.Name(), constants.ServersPrefix) {
 			servFound = append(servFound, f.Name())
 			buf := fmt.Sprintf("Possible server found: %v", f.Name())
-			fmt.Println(buf)
+			logs.Log(buf)
 		}
 	}
 
 	if servFound != nil {
-		ReadConfigs(servFound)
+		readConfigs(servFound)
 	} else {
 		logs.Log("No servers found!")
 		return false
@@ -39,23 +42,67 @@ func FindAndReadConfigs() bool {
 	return true
 }
 
-func ReadConfigs(serversFound []string) bool {
+type servdata struct {
+	letter string
+	name   string
+	port   int
+}
 
-	found := false
+func createServData() servdata {
+	data := servdata{}
+	return data
+}
+
+func readConfigs(serversFound []string) bool {
+
+	var cfglist []string
 
 	for _, s := range serversFound {
-		_, err := os.Stat(constants.ServersRoot + s + "/cw-local-config.json")
+		path := fmt.Sprintf("%v/%v%v", constants.ServersRoot, s, "/cw-local-config.json")
+		_, err := os.Stat(path)
 		if err == nil {
-			buf := fmt.Sprintf("Server config file found: %v", s)
-			found = true
-			fmt.Println(buf)
+			cfglist = append(cfglist, path)
+			buf := fmt.Sprintf("Server config file found: %v", path)
+			logs.Log(buf)
+		} else {
+			buf := fmt.Sprintf("Server with no config: %v", path)
+			logs.Log(buf)
 		}
 	}
 
-	if !found {
-		fmt.Println("No servers configs found!!!")
-		return false
-	} else {
-		return true
+	//Read server config
+	var servlist []servdata
+	var cfgread = 0
+	for _, s := range cfglist {
+		file, err := ioutil.ReadFile(s)
+		if file != nil && err == nil {
+			cfg := createServData()
+
+			err := json.Unmarshal([]byte(file), &cfg)
+			if err != nil {
+				logs.Log("readConfigs: Unmashal failure")
+				logs.Log(err.Error())
+				return false
+			}
+
+			cfgread = cfgread + 1
+			servlist = append(servlist, cfg)
+			buf := fmt.Sprintf("Read Config: %v", s)
+			logs.Log(buf)
+
+		} else {
+			logs.Log("readConfigs: ReadFile failure")
+			return false
+		}
 	}
+	if cfgread > 0 {
+		buf := fmt.Sprintf("%v config files read.", cfgread)
+		ServerCfgs = servlist
+
+		return true
+		logs.Log(buf)
+	} else {
+		logs.Log("Unable to find or read any server config files!")
+	}
+	return false
 }

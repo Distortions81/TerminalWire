@@ -29,11 +29,6 @@ func err_handler(err error) {
 func main() {
 	t := time.Now()
 
-	if !ReadConfig() {
-		logs.Log("No config found")
-		return
-	}
-
 	if !cfg.FindAndReadConfigs() {
 		logs.Log("No server configs found.")
 		return

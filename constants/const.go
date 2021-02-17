@@ -11,7 +11,7 @@ const CMSRestTime = 6000 * time.Millisecond
 const CMSPollRate = 100 * time.Millisecond
 
 //Replace with data from global config
-const ServersRoot = "/home/dist/Desktop/"
+const ServersRoot = "/home/dist/Desktop/fact"
 const ServersPrefix = "cw-"
 
 const MaxServers = 32
