@@ -27,17 +27,6 @@ func err_handler(err error) {
 func main() {
 	t := time.Now()
 
-	if !cfg.ReadGCfg() {
-		logs.Log("No global server config found.")
-		os.Exit(1)
-		return
-	}
-	if !cfg.FindAndReadLConfigs() {
-		logs.Log("No server configs found.")
-		os.Exit(1)
-		return
-	}
-
 	//Create our log file name
 	glob.BotLogName = fmt.Sprintf("log/bot-%v.log", t.Unix())
 
@@ -58,11 +47,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	discord, err := discordgo.New("Bot " + cfg.Global.DiscordData.Token)
+	if !cfg.ReadGCfg() {
+		logs.Log("No global server config found.")
+		os.Exit(1)
+		return
+	}
+	if !cfg.FindAndReadLConfigs() {
+		logs.Log("No server configs found.")
+		os.Exit(1)
+		return
+	}
+
+	discord, err := discordgo.New("Bot " + constants.Token)
 	if err != nil {
 		logs.Log("Unable to connect to Discord!")
 		os.Exit(1)
 	}
+
+	time.Sleep(2 * time.Second)
 
 	discord.AddHandler(IncomingMessage)
 	erro := discord.Open()
@@ -74,6 +76,7 @@ func main() {
 
 	glob.DS = discord
 	logs.Log("Bot is ready.")
+	CMS("Bot online.")
 
 	//Channel Message Send Loop
 	CMSLoop()
