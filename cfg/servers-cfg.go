@@ -8,7 +8,6 @@ import (
 	"strings"
 	"sync"
 
-	"../constants"
 	"../logs"
 )
 
@@ -138,7 +137,7 @@ type SoftModOptionsStruct struct {
 
 func ReadGCfg() bool {
 
-	_, err := os.Stat(constants.ServersRoot + constants.CWGlobalConfig)
+	_, err := os.Stat(Global.PathData.FactorioServersRoot + Settings.CWGlobalConfig)
 	notfound := os.IsNotExist(err)
 
 	if notfound {
@@ -147,7 +146,7 @@ func ReadGCfg() bool {
 
 	} else {
 
-		file, err := ioutil.ReadFile(constants.ServersRoot + constants.CWGlobalConfig)
+		file, err := ioutil.ReadFile(Global.PathData.FactorioServersRoot + Settings.CWGlobalConfig)
 
 		if file != nil && err == nil {
 			cfg := CreateGCfg()
@@ -182,7 +181,7 @@ func CreateLCfg() config {
 func FindAndReadLConfigs() bool {
 	var servFound []string
 
-	files, err := ioutil.ReadDir(constants.ServersRoot)
+	files, err := ioutil.ReadDir(Global.PathData.FactorioServersRoot)
 
 	if err != nil {
 
@@ -192,7 +191,7 @@ func FindAndReadLConfigs() bool {
 
 	for _, f := range files {
 
-		if f.IsDir() && strings.Contains(f.Name(), constants.ServersPrefix) {
+		if f.IsDir() && strings.Contains(f.Name(), Global.PathData.FactorioHomePrefix) {
 			servFound = append(servFound, f.Name())
 			buf := fmt.Sprintf("Possible server found: %v", f.Name())
 			logs.Log(buf)
@@ -213,7 +212,7 @@ func ReadLConfigs(serversFound []string) bool {
 	var cfglist []string
 
 	for _, s := range serversFound {
-		path := fmt.Sprintf("%v%v/%v", constants.ServersRoot, s, constants.CWLocalConfig)
+		path := fmt.Sprintf("%v%v/%v", Global.PathData.FactorioServersRoot, s, Settings.CWLocalConfig)
 		_, err := os.Stat(path)
 		if err == nil {
 			cfglist = append(cfglist, path)

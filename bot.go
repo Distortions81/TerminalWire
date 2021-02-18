@@ -9,7 +9,6 @@ import (
 	"syscall"
 	"time"
 
-	"./constants"
 	"github.com/Distortions81/rcon"
 	"github.com/bwmarrin/discordgo"
 
@@ -47,18 +46,23 @@ func main() {
 		os.Exit(1)
 	}
 
+	if !cfg.ReadSettings() {
+		logs.Log("No bot settings found, or invalid data.")
+		os.Exit(1)
+		return
+	}
 	if !cfg.ReadGCfg() {
-		logs.Log("No global server config found.")
+		logs.Log("No global server config found, or invalid data")
 		os.Exit(1)
 		return
 	}
 	if !cfg.FindAndReadLConfigs() {
-		logs.Log("No server configs found.")
+		logs.Log("No server configs found, or invalid data.")
 		os.Exit(1)
 		return
 	}
 
-	discord, err := discordgo.New("Bot " + constants.Token)
+	discord, err := discordgo.New("Bot " + cfg.Settings.Token)
 	if err != nil {
 		logs.Log("Unable to connect to Discord!")
 		os.Exit(1)
@@ -102,7 +106,7 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 	fmt.Println("A MEEP")
 
 	//Right channel?
-	if m.ChannelID == constants.CWChannelID {
+	if m.ChannelID == cfg.Settings.CWChannelID {
 		fmt.Println("MEEP")
 
 		args := strings.Split(m.Content, " ")
@@ -125,7 +129,7 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 					serv.Lock.Lock()
 					serv.Waiting = true
 
-					SendRCON(i, command, s)
+					SendRCON(i+1, command, s)
 				}
 			}
 			return
@@ -148,7 +152,7 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 
 	serv := cfg.Local[i]
 	portstr := fmt.Sprintf("%v", serv.Port+cfg.Global.RconPortOffset)
-	remoteConsole, err := rcon.Dial(constants.HostIP+":"+portstr, cfg.Global.RconPass)
+	remoteConsole, err := rcon.Dial(cfg.Settings.Host+":"+portstr, cfg.Global.RconPass)
 	if err != nil || remoteConsole == nil {
 		err_handler(err)
 		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
@@ -225,7 +229,7 @@ func CMSLoop() {
 
 				//If buffer is active, sleep and wait for it to fill up
 				if active {
-					time.Sleep(constants.CMSRate)
+					time.Sleep(time.Duration(cfg.Settings.CMSRate) * time.Millisecond)
 
 					//Waited for buffer to fill up, grab and clear buffers
 					glob.CMSBufferLock.Lock()
@@ -247,25 +251,25 @@ func CMSLoop() {
 							oldlen := len(buf) + 1
 							addlen := len(line)
 							if oldlen+addlen >= 2000 {
-								disc.SmartWriteDiscord(constants.CWChannelID, buf)
+								disc.SmartWriteDiscord(cfg.Settings.CWChannelID, buf)
 								buf = line
 							} else {
 								buf = buf + "\n" + line
 							}
 						}
 						if buf != "" {
-							disc.SmartWriteDiscord(constants.CWChannelID, buf)
+							disc.SmartWriteDiscord(cfg.Settings.CWChannelID, buf)
 						}
 					}
 
 					//Don't send any more messages for a while (throttle)
-					time.Sleep(constants.CMSRestTime)
+					time.Sleep(time.Duration(cfg.Settings.CMSRestTime) * time.Millisecond)
 				}
 
 			}
 
 			//Sleep for a moment before checking buffer again
-			time.Sleep(constants.CMSPollRate)
+			time.Sleep(time.Duration(cfg.Settings.CMSPollRate) * time.Millisecond)
 		}
 	}()
 }
