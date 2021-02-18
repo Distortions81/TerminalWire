@@ -54,10 +54,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	//Log number of servers configured
-	glob.NumServers = len(glob.ServerList.Servers) - 1
-	logs.Log(fmt.Sprintf("%v servers loaded.", glob.NumServers))
-
 	discord, err := discordgo.New("Bot " + glob.ServerList.Token)
 	if err != nil {
 		os.Exit(1)

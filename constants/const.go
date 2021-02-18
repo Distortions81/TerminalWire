@@ -2,7 +2,7 @@ package constants
 
 import "time"
 
-const Version = "0.202-111820200641a"
+const Version = "0.203-02-17-2021-1004p"
 const Unknown = "Unknown"
 
 //Throttle to about 5 every 6 seconds
@@ -10,11 +10,8 @@ const CMSRate = 500 * time.Millisecond
 const CMSRestTime = 6000 * time.Millisecond
 const CMSPollRate = 100 * time.Millisecond
 
-//Replace with data from global config
-const ServersRoot = "/home/dist/Desktop/fact"
-const ServersPrefix = "cw-"
-
-const MaxServers = 32
-
-const DATA_DIR = ""
-const CONFIG_FILE = "servers.cfg"
+//Config files
+const ServersRoot = "/home/fact/"
+const ServersPrefix = "fact-"
+const CWGlobalConfig = "cw-global-config.json"
+const CWLocalConfig = "cw-local-config.json"
