@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+	"sync"
 
 	"../constants"
 	"../logs"
@@ -34,6 +35,9 @@ type config struct {
 	ChannelData    ChannelDataStruct
 	SlowConnect    SlowConnectStruct
 	SoftModOptions SoftModOptionsStruct
+
+	Waiting bool
+	Lock    sync.Mutex
 }
 
 type gconfig struct {
@@ -134,7 +138,7 @@ type SoftModOptionsStruct struct {
 
 func ReadGCfg() bool {
 
-	_, err := os.Stat(constants.CWGlobalConfig)
+	_, err := os.Stat(constants.ServersRoot + constants.CWGlobalConfig)
 	notfound := os.IsNotExist(err)
 
 	if notfound {
@@ -143,7 +147,7 @@ func ReadGCfg() bool {
 
 	} else {
 
-		file, err := ioutil.ReadFile(constants.CWGlobalConfig)
+		file, err := ioutil.ReadFile(constants.ServersRoot + constants.CWGlobalConfig)
 
 		if file != nil && err == nil {
 			cfg := CreateGCfg()
@@ -209,7 +213,7 @@ func ReadLConfigs(serversFound []string) bool {
 	var cfglist []string
 
 	for _, s := range serversFound {
-		path := fmt.Sprintf("%v/%v%v", constants.ServersRoot, s, constants.CWLocalConfig)
+		path := fmt.Sprintf("%v%v/%v", constants.ServersRoot, s, constants.CWLocalConfig)
 		_, err := os.Stat(path)
 		if err == nil {
 			cfglist = append(cfglist, path)
@@ -258,5 +262,5 @@ func ReadLConfigs(serversFound []string) bool {
 	} else {
 		logs.Log("Unable to find or read any server config files!")
 	}
-	return false
+	return true
 }

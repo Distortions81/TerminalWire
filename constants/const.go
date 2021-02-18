@@ -10,8 +10,10 @@ const CMSRate = 500 * time.Millisecond
 const CMSRestTime = 6000 * time.Millisecond
 const CMSPollRate = 100 * time.Millisecond
 
-//Config files
-const ServersRoot = "/home/fact/"
-const ServersPrefix = "fact-"
+//Move to new CFG when done
+const ServersRoot = "/home/dist/Desktop/fact/"
+const ServersPrefix = "cw-"
 const CWGlobalConfig = "cw-global-config.json"
 const CWLocalConfig = "cw-local-config.json"
+const CWChannelID = "811840750722744360"
+const HostIP = "m45sci.xyz"

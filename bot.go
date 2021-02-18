@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -11,11 +9,11 @@ import (
 	"syscall"
 	"time"
 
+	"./constants"
 	"github.com/Distortions81/rcon"
 	"github.com/bwmarrin/discordgo"
 
 	"./cfg"
-	"./constants"
 	"./disc"
 	"./glob"
 	"./logs"
@@ -29,8 +27,14 @@ func err_handler(err error) {
 func main() {
 	t := time.Now()
 
-	if !cfg.FindAndReadConfigs() {
+	if !cfg.ReadGCfg() {
+		logs.Log("No global server config found.")
+		os.Exit(1)
+		return
+	}
+	if !cfg.FindAndReadLConfigs() {
 		logs.Log("No server configs found.")
+		os.Exit(1)
 		return
 	}
 
@@ -54,14 +58,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	discord, err := discordgo.New("Bot " + glob.ServerList.Token)
+	discord, err := discordgo.New("Bot " + cfg.Global.DiscordData.Token)
 	if err != nil {
+		logs.Log("Unable to connect to Discord!")
 		os.Exit(1)
 	}
 
 	discord.AddHandler(IncomingMessage)
 	erro := discord.Open()
 	if erro != nil {
+		logs.Log("Unable to open session.")
 		err_handler(erro)
 		os.Exit(1)
 	}
@@ -80,6 +86,7 @@ func main() {
 }
 
 func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
+	fmt.Println("BORK")
 	if m.Author.ID == s.State.User.ID {
 		//Hello, no this is Patrick!
 		return
@@ -89,9 +96,11 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Don't listen to other bots...
 		return
 	}
+	fmt.Println("A MEEP")
 
 	//Right channel?
-	if m.ChannelID == glob.ServerList.ChannelID {
+	if m.ChannelID == constants.CWChannelID {
+		fmt.Println("MEEP")
 
 		args := strings.Split(m.Content, " ")
 		if len(args) > 1 {
@@ -101,25 +110,17 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 			//Log who, and what command
 			logs.Log("~" + m.Author.Username + ": " + m.Content)
 
-			for i := 0; i < glob.NumServers; i++ {
-				if strings.EqualFold(glob.ServerList.Servers[i].CmdName, server) || (strings.EqualFold(server, "all") && glob.ServerList.Servers[i].CmdName != "") {
+			for i, serv := range cfg.Local {
+				if strings.EqualFold(serv.ServerCallsign, server) || (strings.EqualFold(server, "all") && serv.ServerCallsign != "") {
 					if command == "" {
 						_, err := s.ChannelMessageSend(m.ChannelID, "No command specified.")
 						err_handler(err)
 						return
 					}
-					/*
-						time.Sleep(100 * time.Millisecond)
-						go func(pos int) {
-							glob.ServerList.Servers[pos].Lock.Lock()
-							glob.ServerList.Servers[pos].Waiting = true
-
-							SendRCON(pos, command, s)
-						}(i)*/
 
 					//Force to read in order
-					glob.ServerList.Servers[i].Lock.Lock()
-					glob.ServerList.Servers[i].Waiting = true
+					serv.Lock.Lock()
+					serv.Waiting = true
 
 					SendRCON(i, command, s)
 				}
@@ -142,30 +143,32 @@ func truncateString(str string, num int) string {
 
 func SendRCON(i int, command string, s *discordgo.Session) {
 
-	remoteConsole, err := rcon.Dial(glob.ServerList.Servers[i].Host+":"+glob.ServerList.Servers[i].Port, glob.ServerList.Servers[i].Pass)
+	serv := cfg.Local[i]
+	portstr := fmt.Sprintf("%v", serv.Port+cfg.Global.RconPortOffset)
+	remoteConsole, err := rcon.Dial(constants.HostIP+":"+portstr, cfg.Global.RconPass)
 	if err != nil || remoteConsole == nil {
 		err_handler(err)
-		CMS(fmt.Sprintf("%v: Error: `%v`", glob.ServerList.Servers[i].Name, err))
-		glob.ServerList.Servers[i].Lock.Unlock()
+		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
+		serv.Lock.Unlock()
 		return
 	}
 
 	defer func() {
-		glob.ServerList.Servers[i].Lock.Unlock()
+		serv.Lock.Unlock()
 		remoteConsole.Close()
 	}()
 
 	reqID, err := remoteConsole.Write(command)
 	if err != nil {
 		err_handler(err)
-		CMS(fmt.Sprintf("%v: Error: `%v`", glob.ServerList.Servers[i].Name, err))
+		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
 		return
 	}
 
 	resp, respReqID, err := remoteConsole.Read()
 	if err != nil {
 		err_handler(err)
-		CMS(fmt.Sprintf("%v: Error: `%v`", glob.ServerList.Servers[i].Name, err))
+		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
 		return
 	}
 
@@ -174,36 +177,7 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 		return
 	}
 
-	CMS(fmt.Sprintf("**%v:**\n```%v```", glob.ServerList.Servers[i].Name, resp))
-}
-
-func ReadConfig() bool {
-
-	_, err := os.Stat(constants.DATA_DIR + constants.CONFIG_FILE)
-	notfound := os.IsNotExist(err)
-
-	if notfound {
-		err_handler(err)
-		log.Println("Config file not found!")
-		return false
-
-	} else {
-
-		file, err := ioutil.ReadFile(constants.DATA_DIR + constants.CONFIG_FILE)
-
-		if file != nil && err == nil {
-			err := json.Unmarshal([]byte(file), &glob.ServerList)
-			if err != nil {
-				err_handler(err)
-			}
-
-			log.Println("Config loaded.")
-			return true
-		} else {
-			err_handler(err)
-			return false
-		}
-	}
+	CMS(fmt.Sprintf("**%v:**\n```%v```", serv.Name, resp))
 }
 
 func CMS(text string) {
@@ -270,14 +244,14 @@ func CMSLoop() {
 							oldlen := len(buf) + 1
 							addlen := len(line)
 							if oldlen+addlen >= 2000 {
-								disc.SmartWriteDiscord(glob.ServerList.ChannelID, buf)
+								disc.SmartWriteDiscord(constants.CWChannelID, buf)
 								buf = line
 							} else {
 								buf = buf + "\n" + line
 							}
 						}
 						if buf != "" {
-							disc.SmartWriteDiscord(glob.ServerList.ChannelID, buf)
+							disc.SmartWriteDiscord(constants.CWChannelID, buf)
 						}
 					}
 
