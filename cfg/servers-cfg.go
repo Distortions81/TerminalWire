@@ -14,6 +14,7 @@ import (
 
 var Local []config
 var Global gconfig
+var ConfigLock sync.Mutex
 
 type config struct {
 	Version string
@@ -35,8 +36,6 @@ type config struct {
 	ChannelData    ChannelDataStruct
 	SlowConnect    SlowConnectStruct
 	SoftModOptions SoftModOptionsStruct
-
-	Lock sync.Mutex `json:"-"`
 }
 
 type gconfig struct {
@@ -67,6 +66,7 @@ type AdminData struct {
 type PathDataStruct struct {
 	FactorioServersRoot string //root of factorio server
 	FactorioHomePrefix  string //per-server
+	ChatWireHomePrefix  string //per-server
 	FactorioBinary      string
 
 	RecordPlayersFilename string //boh
@@ -191,7 +191,7 @@ func FindAndReadLConfigs() bool {
 
 	for _, f := range files {
 
-		if f.IsDir() && strings.Contains(f.Name(), Global.PathData.FactorioHomePrefix) {
+		if f.IsDir() && strings.Contains(f.Name(), Global.PathData.ChatWireHomePrefix) {
 			servFound = append(servFound, f.Name())
 			if constants.Debug {
 				buf := fmt.Sprintf("Possible server found: %v", f.Name())

@@ -152,15 +152,14 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 	serv := cfg.Local[i]
 
 	//Lock this server until we are done
-	serv.Lock.Lock()
-	defer serv.Lock.Unlock()
+	cfg.ConfigLock.Lock()
+	defer cfg.ConfigLock.Unlock()
 
 	portstr := fmt.Sprintf("%v", serv.Port+cfg.Global.RconPortOffset)
 	remoteConsole, err := rcon.Dial(cfg.Settings.Host+":"+portstr, cfg.Global.RconPass)
 	if err != nil || remoteConsole == nil {
 		err_handler(err)
 		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
-		serv.Lock.Unlock()
 		return
 	}
 

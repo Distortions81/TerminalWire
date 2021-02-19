@@ -49,7 +49,7 @@ func WriteSettings() bool {
 		return false
 	}
 
-	err = ioutil.WriteFile(constants.SettingsName, []byte(outbuf.String()), 0644)
+	err = ioutil.WriteFile(constants.SettingsName, outbuf.Bytes(), 0644)
 
 	if err != nil {
 		logs.Log("WriteSettings: WriteFile failure")
