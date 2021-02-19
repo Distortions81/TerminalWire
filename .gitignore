@@ -4,3 +4,4 @@ rcon-bot-bhmm
 .env
 *.log
 TerminalWire
+settings.json
