@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"../constants"
 	"../logs"
 )
 
@@ -35,8 +36,7 @@ type config struct {
 	SlowConnect    SlowConnectStruct
 	SoftModOptions SoftModOptionsStruct
 
-	Waiting bool
-	Lock    sync.Mutex
+	Lock sync.Mutex `json:"-"`
 }
 
 type gconfig struct {
@@ -193,8 +193,10 @@ func FindAndReadLConfigs() bool {
 
 		if f.IsDir() && strings.Contains(f.Name(), Global.PathData.FactorioHomePrefix) {
 			servFound = append(servFound, f.Name())
-			buf := fmt.Sprintf("Possible server found: %v", f.Name())
-			logs.Log(buf)
+			if constants.Debug {
+				buf := fmt.Sprintf("Possible server found: %v", f.Name())
+				logs.Log(buf)
+			}
 		}
 	}
 
@@ -216,8 +218,10 @@ func ReadLConfigs(serversFound []string) bool {
 		_, err := os.Stat(path)
 		if err == nil {
 			cfglist = append(cfglist, path)
-			buf := fmt.Sprintf("Server config file found: %v", path)
-			logs.Log(buf)
+			if constants.Debug {
+				buf := fmt.Sprintf("Server config file found: %v", path)
+				logs.Log(buf)
+			}
 		} else {
 			buf := fmt.Sprintf("Server with no config: %v", path)
 			logs.Log(buf)

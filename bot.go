@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"./constants"
 	"github.com/Distortions81/rcon"
 	"github.com/bwmarrin/discordgo"
 
@@ -51,7 +52,10 @@ func main() {
 		os.Exit(1)
 		return
 	}
+
+	//Rewrite settings after read, to clean and update
 	cfg.WriteSettings()
+
 	if !cfg.ReadGCfg() {
 		logs.Log("No global server config found, or invalid data")
 		os.Exit(1)
@@ -81,7 +85,8 @@ func main() {
 
 	glob.DS = discord
 	logs.Log("Bot is ready.")
-	CMS("Bot online.")
+	buf := fmt.Sprintf("v%v online, found %v factorio servers.", constants.Version, len(cfg.Local))
+	CMS(buf)
 
 	//Channel Message Send Loop
 	CMSLoop()
@@ -94,7 +99,6 @@ func main() {
 }
 
 func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
-	fmt.Println("BORK")
 	if m.Author.ID == s.State.User.ID {
 		//Hello, no this is Patrick!
 		return
@@ -104,12 +108,9 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 		//Don't listen to other bots...
 		return
 	}
-	fmt.Println("A MEEP")
 
 	//Right channel?
 	if m.ChannelID == cfg.Settings.CWChannelID {
-		fmt.Println("MEEP")
-
 		args := strings.Split(m.Content, " ")
 		if len(args) > 1 {
 			command := strings.Join(args[1:], " ")
@@ -141,7 +142,7 @@ func truncateString(str string, num int) string {
 		if num > 3 {
 			num -= 3
 		}
-		bnoden = str[0:num] + "...(cut, max 2000 chars)"
+		bnoden = str[0:num] + "...(cut, max len)"
 	}
 	return bnoden
 }
@@ -149,8 +150,10 @@ func truncateString(str string, num int) string {
 func SendRCON(i int, command string, s *discordgo.Session) {
 
 	serv := cfg.Local[i]
+
+	//Lock this server until we are done
 	serv.Lock.Lock()
-	serv.Waiting = true
+	defer serv.Lock.Unlock()
 
 	portstr := fmt.Sprintf("%v", serv.Port+cfg.Global.RconPortOffset)
 	remoteConsole, err := rcon.Dial(cfg.Settings.Host+":"+portstr, cfg.Global.RconPass)
@@ -161,17 +164,13 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 		return
 	}
 
-	defer func() {
-		serv.Lock.Unlock()
-		remoteConsole.Close()
-	}()
-
 	reqID, err := remoteConsole.Write(command)
 	if err != nil {
 		err_handler(err)
 		CMS(fmt.Sprintf("%v: Error: `%v`", serv.Name, err))
 		return
 	}
+	defer remoteConsole.Close()
 
 	resp, respReqID, err := remoteConsole.Read()
 	if err != nil {
@@ -185,7 +184,8 @@ func SendRCON(i int, command string, s *discordgo.Session) {
 		return
 	}
 
-	CMS(fmt.Sprintf("**%v:**\n```%v```", serv.Name, resp))
+	//Show response, limit max size per server
+	CMS(fmt.Sprintf("**%v-%v:**\n```%v```", serv.ServerCallsign, serv.Name, truncateString(resp, 1900*3)))
 }
 
 func CMS(text string) {
