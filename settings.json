@@ -1,0 +1,11 @@
+{
+	"Version": "0.0.1",
+	"Token": "NTUyMzI5MTExOTM5MzE3NzYx.XH3qkg._lpuRu3n29T0vAU0CB_LeEAFo4M",
+	"CWChannelID": "811840750722744360",
+	"CMSRate": 500,
+	"CMSRestTime": 500,
+	"CMSPollRate": 100,
+	"CWGlobalConfig": "/home/dist/Desktop/fact/cw-global-config.json",
+	"CWLocalConfig": "cw-local-config.json",
+	"Host": "m45sci.xyz"
+}

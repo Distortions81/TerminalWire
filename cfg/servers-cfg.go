@@ -137,7 +137,7 @@ type SoftModOptionsStruct struct {
 
 func ReadGCfg() bool {
 
-	_, err := os.Stat(Global.PathData.FactorioServersRoot + Settings.CWGlobalConfig)
+	_, err := os.Stat(Settings.CWGlobalConfig)
 	notfound := os.IsNotExist(err)
 
 	if notfound {
@@ -146,7 +146,7 @@ func ReadGCfg() bool {
 
 	} else {
 
-		file, err := ioutil.ReadFile(Global.PathData.FactorioServersRoot + Settings.CWGlobalConfig)
+		file, err := ioutil.ReadFile(Settings.CWGlobalConfig)
 
 		if file != nil && err == nil {
 			cfg := CreateGCfg()

@@ -51,6 +51,7 @@ func main() {
 		os.Exit(1)
 		return
 	}
+	cfg.WriteSettings()
 	if !cfg.ReadGCfg() {
 		logs.Log("No global server config found, or invalid data")
 		os.Exit(1)
@@ -126,10 +127,7 @@ func IncomingMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
 					}
 
 					//Force to read in order
-					serv.Lock.Lock()
-					serv.Waiting = true
-
-					SendRCON(i+1, command, s)
+					SendRCON(i, command, s)
 				}
 			}
 			return
@@ -151,6 +149,9 @@ func truncateString(str string, num int) string {
 func SendRCON(i int, command string, s *discordgo.Session) {
 
 	serv := cfg.Local[i]
+	serv.Lock.Lock()
+	serv.Waiting = true
+
 	portstr := fmt.Sprintf("%v", serv.Port+cfg.Global.RconPortOffset)
 	remoteConsole, err := rcon.Dial(cfg.Settings.Host+":"+portstr, cfg.Global.RconPass)
 	if err != nil || remoteConsole == nil {
